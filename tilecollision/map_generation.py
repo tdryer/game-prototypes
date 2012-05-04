@@ -5,70 +5,98 @@ import random
 # easy_install noise
 # use the pure-python implementation since it allows randomization
 from noise import perlin
-simplex = perlin.SimplexNoise(period=512)
-
-# noise resolution
-x_size = 0.1
-y_size = 0.1
 
 
-def generate(map_size):
-    """Return a new map.
+def add(col1, col2):
+    """Return sum of two brighness values."""
+    return col1 + col2 if col1 + col2 <= 1.0 else 1.0
+
+
+def sub(col1, col2):
+    """Return difference of two brightness values."""
+    return col1 - col2 if col1 - col2 >= 0.0 else 0.0
+
+
+def normalized_noise(noise_func, x_scale, y_scale, x, y):
+    """Return a point of noise.
     
-    map_size: (x,y) number of blocks in map.
-    
-    Returns list of integers giving map in row-major order.
+    noise_func should be instance of perlin.SimplexNoise
     """
-    blocks = [] # block data in row-major order
-    for y in xrange(map_size[1]):
-        for x in xrange(map_size[0]):
-            col = simplex.noise2(x_size * float(x), y_size * float(y))
-            
-            # normalise the output to 0-255 (not sure about this)
-            col = int(col * 127 + 128)
+    col = noise_func.noise2(x_scale * float(x), y_scale * float(y))
+    col = int(col * 127 + 128)/255.0
+    return col
 
-            # apply gradient
-            # use relative heights with top=1
-            start = 1.0 # above this is pure white
-            end = 0.8 # below this if untouched
-            pos = 1 - (float(y) / map_size[1])
-            if pos > start:
-                col = 255
-            elif pos < end:
-                pass
-            else:
-                added = (pos - end) / (start - end)
-                added *= 255
-                col += added
-                if col > 255:
-                    col = 255
+
+def threshold(col, thresh):
+    """Returns 1.0 for col > thresh, and 0.0 otherwise."""
+    return 1.0 if col > thresh else 0.0
+
+
+def v_gradient(y_start, y_end, x, y):
+    """Return brightness at (x, y) of vertical gradient.
+    
+    y_start: point where brightness=1.0
+    y_end: point where brightness=0.0
+    """
+    assert y_start > y_end # TODO: remove limitation
+    if y > y_start:
+        return 1.0
+    elif y < y_end:
+        return 0.0
+    else:
+        return float(y - y_end) / (y_start - y_end)
+
+
+def generate_map(size):
+    """Return list of block ids in row-major order."""
+    blocks = []
+    
+    # tuneables
+    HEIGHTMAP_X_SCALE = 0.04 # lower -> smoother terrian
+    HEIGHTMAP_Y_SCALE = 0.04 # lower -> fewer overhangs and islands
+    CAVE_SCALE = (0.1, 0.1)
+    
+    # create noise functions
+    heightmap_noise = perlin.SimplexNoise(period=64)
+    cave_noise = perlin.SimplexNoise(period=64)
+    
+    for y in xrange(size[1]):
+        for x in xrange(size[0]):
+            # ground heightmap
+            g = v_gradient(40, 20, x, y)
+            heightmap = normalized_noise(heightmap_noise, HEIGHTMAP_X_SCALE,
+                                         HEIGHTMAP_Y_SCALE, x, y)
+            g = threshold(g, heightmap)
             
-            # apply threshold
-            threshold = 160 # higher -> more black
-            if col > threshold:
-                col = 255
-            else:
-                col = 0
+            # caves, 1.0=cave
+            caves = normalized_noise(cave_noise, CAVE_SCALE[0], CAVE_SCALE[1],
+                                     x, y)
+            cave_freq = 1 - v_gradient(80, -60, x, y) # most caves at bottom
+            caves = add(caves, cave_freq)
+            caves = threshold(caves, 0.5)
             
-            blocks.append(col)
+            comp = sub(g, sub(1, caves))
+            
+            blocks.append(int(comp))
     return blocks
 
 
 def main():
-    """Test program for generate()."""
+    """Test program for generate_map()."""
     pygame.init()
-    screen_size = (600,600)
-    blocks_size = (100,100)
+    screen_size = (600,600) # pixels
+    blocks_size = (100,100) # blocks
     screen = pygame.display.set_mode(screen_size)
     blocks = pygame.Surface(blocks_size)
 
-    # get block data
-    block_data = generate(blocks_size)
-    
-    # convert block data to pixels
+    heightmap_noise = perlin.SimplexNoise(period=64)
+
+    m = generate_map(blocks_size)
+
     for y in xrange(blocks_size[1]):
         for x in xrange(blocks_size[0]):
-            col = block_data[y*blocks_size[1]+x]
+            raw = m[x + y*blocks_size[1]]
+            col = raw * 255
             blocks.set_at((x,y), (col,col,col))
     
     blocks = pygame.transform.scale(blocks, screen_size)

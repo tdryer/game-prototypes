@@ -241,7 +241,7 @@ class Map:
         
         grass = pygame.image.load('grass.png')
         
-        self.block_name = { "grass": 0, "air": 255 }
+        self.block_name = { "grass": 1, "air": 0 }
         # dictionary to get (solid, surface) info from block ID
         self.block_info = {self.block_name["grass"]: (True, grass),
                             self.block_name["air"]: (False, None),
@@ -254,7 +254,7 @@ class Map:
         self.size = size # (width, height) of the map in blocks
         self.entities = [] # list of MapEntities in the map
         
-        self._blocks = map_generation.generate(size)
+        self._blocks = map_generation.generate_map(size)
         
         self._particle_systems = [] # (ParticleSystem, pos) tuples
         
