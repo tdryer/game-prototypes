@@ -1,0 +1,15 @@
+"space": prototype asteroids clone
+
+Requires:
+    Python ~2.7
+    pygame ~1.9
+
+Features:
+    Ship, asteroids, bullets, and explosions.
+    Smoothly interpolated animations.
+
+Run "space.py", use the left and right keys to rotate the ship, use up key to 
+accelerate forward, press space to fire bullets. Hit asteroids with bullets to
+explode them. When all the asteroids are destroyed, the camera will pan to a 
+new group.
+
