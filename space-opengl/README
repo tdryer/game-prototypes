@@ -1,0 +1,12 @@
+"space-opengl": partial port of my "space" prototype to C++ and OpenGL
+
+Requires:
+    freeglut3-dev (apt-get install freeglut3-dev)
+
+Features:
+    Ship, asteroids (no bullets or explosions).
+    Smoothly interpolated animations.
+    Multi-layer parallax starfield background.
+
+Run "make" and "./main" to compile and run. Use the A and W keys to rotate the ship, use W key to accelerate forward.
+
