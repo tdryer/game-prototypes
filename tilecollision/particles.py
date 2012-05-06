@@ -17,7 +17,7 @@ class Particle:
 
 class ParticleSystem:
     """A source of particles."""
-    def __init__(self):
+    def __init__(self, source_surf=pygame.image.load('grass.png')):
         """Init and set parameters.
         
         Parameters are currently hard-coded here for the block-break effect.
@@ -25,7 +25,7 @@ class ParticleSystem:
         self.duration = 250 # ms
         self.spawn_rate = 0.1 # particles/ms
         self.gravity = 100.0 # units/sec/sec
-        self.source_surf = pygame.image.load('grass.png')
+        self.source_surf = source_surf
         self.surf_size = self.source_surf.get_size()
         self.size = 5
         self.v_range = (-80, 80)

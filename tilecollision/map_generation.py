@@ -59,6 +59,7 @@ def generate_map(size):
     # create noise functions
     heightmap_noise = perlin.SimplexNoise(period=64)
     cave_noise = perlin.SimplexNoise(period=64)
+    rock_noise = perlin.SimplexNoise(period=64)
     
     for y in xrange(size[1]):
         for x in xrange(size[0]):
@@ -77,7 +78,21 @@ def generate_map(size):
             
             comp = sub(g, sub(1, caves))
             
-            blocks.append(int(comp))
+            # rocks
+            rock = normalized_noise(rock_noise, 0.1, 0.1, x, y)
+            rock_freq = 1 - v_gradient(80, -100, x, y)
+            rock = add(rock, rock_freq)
+            rock = threshold(rock, 0.3)
+            
+            if comp == 1:
+                b = 1
+                if rock == 0:
+                    b = 2
+            else:
+                b = 0
+            
+            #blocks.append(int(comp))
+            blocks.append(b)
     return blocks
 
 
@@ -93,11 +108,13 @@ def main():
 
     m = generate_map(blocks_size)
 
+    cols = {0: (0, 0, 255), 1: (0, 255, 0), 2: (100, 100, 100)}
+
     for y in xrange(blocks_size[1]):
         for x in xrange(blocks_size[0]):
             raw = m[x + y*blocks_size[1]]
-            col = raw * 255
-            blocks.set_at((x,y), (col,col,col))
+            col = cols[raw]
+            blocks.set_at((x,y), col)
     
     blocks = pygame.transform.scale(blocks, screen_size)
     screen.blit(blocks, (0,0))

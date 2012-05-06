@@ -240,12 +240,14 @@ class Map:
         self.CHUNK_SIZE = 8 # blocks square
         
         grass = pygame.image.load('grass.png')
+        rock = pygame.image.load('rock.png')
         
-        self.block_name = { "grass": 1, "air": 0 }
+        self.block_name = { "rock": 2, "grass": 1, "air": 0 }
         # dictionary to get (solid, surface) info from block ID
         self.block_info = {self.block_name["grass"]: (True, grass),
-                            self.block_name["air"]: (False, None),
-                           }
+                           self.block_name["air"]: (False, None),
+                           self.block_name["rock"]: (True, rock),
+                          }
         # indexes into the dictionary's tuples for specific info
         self.INFO_SOLID = 0
         self.INFO_SURF = 1
@@ -493,12 +495,15 @@ class Game:
                         self.map.set_block(gx, gy, self.map.block_name["grass"])
                         self.blocks_collected -= 1
                         self.hud.blocks -= 1
-                    elif block_id == self.map.block_name["grass"]:
+                    # allow solid blocks to be destroyed
+                    elif self.map.block_info[block_id][self.map.INFO_SOLID]:
                         # remove block
                         self.map.set_block(gx, gy, self.map.block_name["air"])
                         self.blocks_collected += 1
                         self.hud.blocks += 1
-                        ps_pos = (particles.ParticleSystem(), (gx+0.5, gy+0.5))
+                        surf = self.map.block_info[block_id][self.map.INFO_SURF]
+                        ps_pos = (particles.ParticleSystem(surf),
+                                  (gx+0.5, gy+0.5))
                         self.map._particle_systems.append(ps_pos)
                         angle = atan2(gx - self.player.x, gy - self.player.y)
                         self.player.punch((180/3.141) * angle)
