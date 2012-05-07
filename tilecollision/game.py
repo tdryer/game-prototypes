@@ -193,6 +193,8 @@ class Map:
         
         self._particle_systems = [] # (ParticleSystem, pos) tuples
         
+        self.cursor_pos = (0, 0) # pixel coords
+        
         # prime the chunk cache by rendering every chunk in the map
         self._chunk_cache = {}
         print "priming chunk cache..."
@@ -335,7 +337,14 @@ class Map:
             p_pos = self.grid_to_px(pos, g_pos)
             # TODO: clip
             ps.draw(surf, p_pos)
-    
+        
+        # draw selected block
+        selected_block = self.px_to_grid(pos, self.cursor_pos)
+        selected_block = (int(selected_block[0]), int(selected_block[1]))
+        rect = (self.grid_to_px(pos, selected_block) + 
+                (self.TILE_SIZE, self.TILE_SIZE))
+        pygame.draw.rect(surf, (255, 0, 0), rect, 2)
+        
     def grid_to_px(self, topleft, pos):
         """Return pixel coordinate from a grid coordinate.
         
@@ -439,6 +448,8 @@ class Game:
                     self.player.walk_right = False
                 elif event.key == 276: #left
                     self.player.walk_left = False
+            elif event.type == pygame.MOUSEMOTION:
+                self.map.cursor_pos = event.pos
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     # get coordinates and id of selected block
