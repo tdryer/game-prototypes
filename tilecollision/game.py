@@ -5,39 +5,7 @@ from math import ceil, floor, sin, cos, atan2
 import map_generation
 import particles
 from blocks import Block
-
-
-class HUD:
-    """The onscreen area for showing info. 
-    
-    For now it just shows the net number of blocks destroyed versus added.
-    """
-    def __init__(self, rect):
-        """ Init the HUD.
-        
-        rect gives the area of the screen which will be drawn to.
-        """
-        self.rect = rect
-        self.surf = pygame.Surface((rect[2], rect[3]), pygame.SRCALPHA)
-        self.font = pygame.font.Font(None, self.rect[3])
-        
-        self.BG_COL = (255, 255, 255, 200)
-        self.BORDER_COL = (255, 255, 255, 128)
-        self.BORDER = 5
-        
-        self.blocks = 0 # the number which is displayed
-        
-    def draw(self, surf):
-        """Draw to the surface given."""
-        self.surf.fill(self.BORDER_COL)
-        pygame.draw.rect(self.surf, self.BG_COL, 
-                         (self.BORDER, self.BORDER, 
-                          self.rect[2]-self.BORDER*2, 
-                          self.rect[3]-self.BORDER*2))
-        font_surf = self.font.render(str(self.blocks), True, (0,0,0))
-        self.surf.blit(font_surf, (self.BORDER,self.BORDER))
-        surf.blit(self.surf, (self.rect[0], self.rect[1]))
-
+from hud import HUD
 
 class MapEntity:
     """Something that can be drawn on and collide with the map.
@@ -447,8 +415,6 @@ class Game:
                     self.screen_size[0], self.HUD_HEIGHT)
         self.hud = HUD(hud_rect)
         
-        self.blocks_collected = 0
-        
         self.topleft = (0, 0) # reset to center on player
         
     def do_events(self):
@@ -481,25 +447,28 @@ class Game:
                     (gx, gy) = self.map.px_to_grid(self.topleft, event.pos)
                     (gx, gy) = (int(gx), int(gy))
                     block_id = self.map.get_block(gx, gy)
-                    # swap the block's type
+                    # put a block in air
                     if block_id == Block(name="air").id:
                         # add block
-                        self.map.set_block(gx, gy, Block(name="grass").id)
-                        self.blocks_collected -= 1
-                        self.hud.blocks -= 1
+                        new_block = self.hud.get_selected_block()
+                        self.map.set_block(gx, gy, new_block)
                     # allow solid blocks to be destroyed
                     elif Block(block_id).is_solid:
                         # remove block
                         self.map.set_block(gx, gy, Block(name="air").id)
-                        self.blocks_collected += 1
-                        self.hud.blocks += 1
+                        self.hud.add_block(block_id)
                         surf = Block(block_id).surf
                         ps_pos = (particles.ParticleSystem(surf),
                                   (gx+0.5, gy+0.5))
                         self.map._particle_systems.append(ps_pos)
                         angle = atan2(gx - self.player.x, gy - self.player.y)
                         self.player.punch((180/3.141) * angle)
-                      
+                elif event.button == 4: # wheel up
+                    self.hud.rotate_selection(1)
+                elif event.button == 5: # wheel down
+                    self.hud.rotate_selection(-1)
+                
+
     def do_update(self, elapsed):
         """Update the game state."""
         self.map.update(elapsed)
