@@ -431,22 +431,20 @@ class Game:
                 pygame.quit()
                 exit(0)
             elif event.type == pygame.KEYDOWN:
-                if event.key == 273: #up
+                if event.key == 119: # w
                     self.player.jump = True
-                elif event.key == 275: #right
-                    self.player.walk_right = True
-                elif event.key == 276: #left
-                    self.player.walk_left = True
                 elif event.key == 100: # d
-                    print self.topleft
+                    self.player.walk_right = True
+                elif event.key == 97: # a
+                    self.player.walk_left = True
                 else:
                     print event.key
             elif event.type == pygame.KEYUP:
-                if event.key == 273: #up
+                if event.key == 119: # w
                     self.player.jump = False
-                elif event.key == 275: #right
+                elif event.key == 100: # d
                     self.player.walk_right = False
-                elif event.key == 276: #left
+                elif event.key == 97: # a
                     self.player.walk_left = False
             elif event.type == pygame.MOUSEMOTION:
                 self.map.cursor_pos = event.pos
