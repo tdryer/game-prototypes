@@ -450,6 +450,10 @@ class Game:
                         # add block
                         new_block = self.hud.get_selected_block()
                         self.map.set_block(gx, gy, new_block)
+                        # if player now collides with map
+                        if self.map.rect_colliding(self.player.get_rect()):
+                            # undo the change by replacing block with air
+                            self.map.set_block(gx, gy, Block(name="air").id)
                     # allow solid blocks to be destroyed
                     elif Block(block_id).is_solid:
                         # remove block
