@@ -12,8 +12,8 @@ Features:
     Simple noise-based terrain generation.
     Simple particle effect when breaking blocks.
 
-Run "python game.py", use the left and right keys to walk, up to jump, left
-click to destory/place blocks.
+Run "python game.py", use the A and D keys to walk, W to jump, left
+click to destory/place blocks, and mouse wheel to switch blocks in the HUD.
 
 This is the first time I've gotten platformer physics working well. The key
 insight seemed to be using a fixed timestep for physics and setting speed
@@ -22,7 +22,7 @@ low enough, the collision detection will work fine. Accepting these two
 limitations makes the code fairly simple.
 
 TODO:
-    fix rendering problems with seams between chunks
+    add lighting
     add more particle effects
     more sophisticated map generation
     add some actual gameplay
