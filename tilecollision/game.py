@@ -369,8 +369,12 @@ class Map:
                     self._chunk_cache[(x, y)] = s
                     elapsed = pygame.time.get_ticks() - now
                     print "cached new chunk in %i ms" % elapsed
+                # rounding pos and blit_pos seems to fix edges between chunks
+                blit_pos = self.grid_to_px((round(pos[0], 2), 
+                                            round(pos[1], 2)), (x, y))
+                blit_pos = (round(blit_pos[0]), round(blit_pos[1]))
                 surf.blit(self._chunk_cache[(x, y)], 
-                          self.grid_to_px(pos, (x, y)))
+                          blit_pos)
         
         # figure out which entities are onscreen and draw them
         for entity in self.entities:
