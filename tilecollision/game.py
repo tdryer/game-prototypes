@@ -74,29 +74,6 @@ class MapEntity:
         e_surf = self.falling_surf if self.is_falling else self.normal_surf
         surf.blit(e_surf, (px, py))
     
-    def rect_colliding(self, rect, map):
-        """Return true if the given rect will collide with the given map.
-        
-        This works by finding all the map blocks inside the rect, and 
-        returning true if any of them are solid blocks.
-        
-        rect should be a (x, y, w, h) tuple since pygame Rects don't use 
-        floats.
-        """
-        # TODO: move this method to Map?
-        r_x = rect[0]
-        r_y = rect[1]
-        r_w = rect[2]
-        r_h = rect[3]
-        # get range of blocks inside the given rect
-        x_range = (int(r_x), int(ceil(r_x + r_w)))
-        y_range = (int(r_y), int(ceil(r_y + r_h)))
-        for x in xrange(x_range[0], x_range[1]):
-            for y in xrange(y_range[0], y_range[1]):
-                if map.is_solid_block(x, y):
-                    return True
-        return False
-    
     def update(self, millis, map):
         """Update the physics of this entity and resolve collisions.
         
@@ -150,18 +127,18 @@ class MapEntity:
         y_snap_dir = 1 if y_increasing else -1
         x_snap_dir = 1 if (new_x > self.x) else -1
         
-        if not self.rect_colliding(next_xy, map):
+        if not map.rect_colliding(next_xy):
             # no collision, so move to next position
             self.x = new_x
             self.y = new_y
         else:
             # collision, so try moving in x or y only
-            if not self.rect_colliding(next_x, map):
+            if not map.rect_colliding(next_x):
                 # moving in x is fine
                 self.x = new_x
                 y_collision = True
                 self.snap_edge_to_grid(0, y_snap_dir)
-            elif not self.rect_colliding(next_y, map):
+            elif not map.rect_colliding(next_y):
                 # moving in y is fine
                 self.y = new_y
                 self.snap_edge_to_grid(x_snap_dir, 0)
@@ -387,6 +364,27 @@ class Map:
             if ps.is_expired():
                 self._particle_systems.remove(ps_pos)
 
+    def rect_colliding(self, rect):
+        """Return true if the given rect will collide with the map.
+        
+        This works by finding all the map blocks inside the rect, and 
+        returning true if any of them are solid blocks.
+        
+        rect should be a (x, y, w, h) tuple since pygame Rects don't use 
+        floats.
+        """
+        r_x = rect[0]
+        r_y = rect[1]
+        r_w = rect[2]
+        r_h = rect[3]
+        # get range of blocks inside the given rect
+        x_range = (int(r_x), int(ceil(r_x + r_w)))
+        y_range = (int(r_y), int(ceil(r_y + r_h)))
+        for x in xrange(x_range[0], x_range[1]):
+            for y in xrange(y_range[0], y_range[1]):
+                if self.is_solid_block(x, y):
+                    return True
+        return False
 
 class Game:
     """Main class which handles input, drawing, and updating."""
