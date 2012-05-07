@@ -2,6 +2,8 @@ import pygame
 from sys import exit
 import random
 
+from blocks import Block
+
 # easy_install noise
 # use the pure-python implementation since it allows randomization
 from noise import perlin
@@ -85,13 +87,12 @@ def generate_map(size):
             rock = threshold(rock, 0.3)
             
             if comp == 1:
-                b = 1
+                b = Block(name="grass").id
                 if rock == 0:
-                    b = 2
+                    b = Block(name="rock").id
             else:
-                b = 0
+                b = Block(name="air").id
             
-            #blocks.append(int(comp))
             blocks.append(b)
     return blocks
 
@@ -108,7 +109,10 @@ def main():
 
     m = generate_map(blocks_size)
 
-    cols = {0: (0, 0, 255), 1: (0, 255, 0), 2: (100, 100, 100)}
+    cols = {Block(name="air").id: (0, 0, 255), 
+            Block(name="grass").id: (0, 255, 0), 
+            Block(name="rock").id: (100, 100, 100),
+           }
 
     for y in xrange(blocks_size[1]):
         for x in xrange(blocks_size[0]):

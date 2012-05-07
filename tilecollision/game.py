@@ -4,6 +4,7 @@ from math import ceil, floor, sin, cos, atan2
 
 import map_generation
 import particles
+from blocks import Block
 
 
 class HUD:
@@ -239,19 +240,6 @@ class Map:
         self.TILE_SIZE = 20 # pixels
         self.CHUNK_SIZE = 8 # blocks square
         
-        grass = pygame.image.load('grass.png')
-        rock = pygame.image.load('rock.png')
-        
-        self.block_name = { "rock": 2, "grass": 1, "air": 0 }
-        # dictionary to get (solid, surface) info from block ID
-        self.block_info = {self.block_name["grass"]: (True, grass),
-                           self.block_name["air"]: (False, None),
-                           self.block_name["rock"]: (True, rock),
-                          }
-        # indexes into the dictionary's tuples for specific info
-        self.INFO_SOLID = 0
-        self.INFO_SURF = 1
-        
         self._blocks = [] # block_ids of the map in row-major order
         self.size = size # (width, height) of the map in blocks
         self.entities = [] # list of MapEntities in the map
@@ -298,7 +286,7 @@ class Map:
         Assumes blocks outside map are not solid.
         """
         block_id = self.get_block(x, y)
-        return (block_id != None and self.block_info[block_id][self.INFO_SOLID])
+        return (block_id != None and Block(block_id).is_solid)
 
     def draw_chunk(self, surf, pos):
         """Draw a self.CHUNK_SIZE square of the map tiles.
@@ -317,7 +305,7 @@ class Map:
                 if self.is_solid_block(x, y):
                     (px, py) = self.grid_to_px(pos, (x,y))
                     block_id = self.get_block(x, y)
-                    block_surf = self.block_info[block_id][self.INFO_SURF]
+                    block_surf = Block(block_id).surf
                     # center the surf on the collision rect
                     (sw, sh) = block_surf.get_size()
                     surf.blit(block_surf, (px-(sw - self.TILE_SIZE)/2, 
@@ -490,18 +478,18 @@ class Game:
                     (gx, gy) = (int(gx), int(gy))
                     block_id = self.map.get_block(gx, gy)
                     # swap the block's type
-                    if block_id == self.map.block_name["air"]:
+                    if block_id == Block(name="air").id:
                         # add block
-                        self.map.set_block(gx, gy, self.map.block_name["grass"])
+                        self.map.set_block(gx, gy, Block(name="grass").id)
                         self.blocks_collected -= 1
                         self.hud.blocks -= 1
                     # allow solid blocks to be destroyed
-                    elif self.map.block_info[block_id][self.map.INFO_SOLID]:
+                    elif Block(block_id).is_solid:
                         # remove block
-                        self.map.set_block(gx, gy, self.map.block_name["air"])
+                        self.map.set_block(gx, gy, Block(name="air").id)
                         self.blocks_collected += 1
                         self.hud.blocks += 1
-                        surf = self.map.block_info[block_id][self.map.INFO_SURF]
+                        surf = Block(block_id).surf
                         ps_pos = (particles.ParticleSystem(surf),
                                   (gx+0.5, gy+0.5))
                         self.map._particle_systems.append(ps_pos)
