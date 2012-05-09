@@ -229,6 +229,15 @@ class Map:
         cy = y / self.CHUNK_SIZE * self.CHUNK_SIZE
         if (cx, cy) in self._chunk_cache:
             del self._chunk_cache[(cx, cy)] # TODO: reuse surface?
+        
+        # update lighting and invalidate changed chunks
+        # for every block with changed lighting, invalidate its chunk
+        changed_blocks = self.light.update_light(x, y)
+        for block in changed_blocks:
+            cx = block[0] / self.CHUNK_SIZE * self.CHUNK_SIZE
+            cy = block[1] / self.CHUNK_SIZE * self.CHUNK_SIZE
+            if (cx, cy) in self._chunk_cache:
+                del self._chunk_cache[(cx, cy)]
 
     def is_solid_block(self, x, y):
         """Return True if block at given coordinates is solid. 

@@ -37,6 +37,31 @@ class Light:
                 self.set_light(x, y, level - 1)
                 self.propagate_light(x, y)
     
+    def update_light(self, x, y):
+        """Update light in area surrounding a changed block at (x, y).
+        
+        Return a list of blocks whose light levels changed.
+        """
+        # clear all light in surrounding area
+        area = [a for a in self.get_update_area(x, y)]
+        for block in area:
+            self.set_light(block[0], block[1], 0)
+        #TODO: update light in area
+        return area
+    
+    def get_update_area(self, x, y):
+        """Yield blocks whose light could be changed by block at (x, y).
+        
+        For now this is a simple rectangle.
+        """
+        for xx in xrange(x - self.MAX_LIGHT_LEVEL - 1,
+                        x + self.MAX_LIGHT_LEVEL):
+            for yy in xrange(y - self.MAX_LIGHT_LEVEL - 1,
+                            y + self.MAX_LIGHT_LEVEL):
+                if (xx in xrange(0, self.map_size[0]) and
+                            yy in xrange(0, self.map_size[1])):
+                    yield (xx, yy)
+    
     def get_light(self, x, y):
         """Return light level at coordinates."""
         if (x in xrange(0, self.map_size[0]) and
