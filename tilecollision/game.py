@@ -6,6 +6,7 @@ import map_generation
 import particles
 from blocks import Block
 from hud import HUD
+from light import Light
 
 class MapEntity:
     """Something that can be drawn on and collide with the map.
@@ -195,6 +196,8 @@ class Map:
         
         self.cursor_pos = (0, 0) # pixel coords
         
+        self.light = Light(self)
+        
         # prime the chunk cache by rendering every chunk in the map
         self._chunk_cache = {}
         print "priming chunk cache..."
@@ -249,15 +252,26 @@ class Map:
         tiles_drawn = 0
         for x in xrange(*(tile_range[0])):
             for y in xrange(*(tile_range[1])):
+                (px, py) = self.grid_to_px(pos, (x,y))
                 if self.is_solid_block(x, y):
-                    (px, py) = self.grid_to_px(pos, (x,y))
+                    
                     block_id = self.get_block(x, y)
                     block_surf = Block(block_id).surf
-                    # center the surf on the collision rect
-                    (sw, sh) = block_surf.get_size()
-                    surf.blit(block_surf, (px-(sw - self.TILE_SIZE)/2, 
-                              py-(sh - self.TILE_SIZE)/2))
+                    surf.blit(block_surf, (px, py))
                     tiles_drawn += 1
+                    
+                # draw brightness
+                brightness = self.light.get_light(x, y)
+                # brightness may be none if (x, y) is outside map
+                if brightness != None:
+                    alpha = 255 * (1 - (float(brightness) /
+                                        self.light.MAX_LIGHT_LEVEL))
+                    # use temp surface with srcalpha
+                    tmp = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE),
+                                         pygame.SRCALPHA)
+                    pygame.draw.rect(tmp, (0, 0, 0, alpha),
+                                     (0, 0, self.TILE_SIZE, self.TILE_SIZE))
+                    surf.blit(tmp, (px, py))
 
     def get_chunks_in_rect(self, rect):
         """Generate the list of chunks inside a rect."""
