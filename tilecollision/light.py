@@ -1,5 +1,33 @@
 from blocks import Block
 
+
+def expand(blocks):
+    """Return set of blocks resulting from "expanding" the given set of blocks.
+    
+    blocks: a list/set of (x, y) tuples.
+    
+    "Expanding" represents propagating the light by one step for every block
+    given.
+            X
+     X --> XXX
+            X
+    """
+    new_blocks = []
+    for (x, y) in blocks:
+        new_blocks += [(x, y), (x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+    return set(new_blocks)
+
+
+def expand_n(pos, n):
+    """Return the set of blocks affected by a light source at pos.
+    
+    n: the max light value.
+    
+    This works by calling expand on pos n times.
+    """
+    return reduce(lambda x, y: expand(x), xrange(n - 1), [pos])
+
+
 class Light:
     """Computes and stores light levels for the map.
     
@@ -10,6 +38,9 @@ class Light:
     When a block is changed, every block whose light level could possibly
     change must be set to 0. Then the lighting for this local area must be 
     recomputed. This ensures light can be "cut off" from its source.
+    
+    The update is completed by propagating light for every block in the area,
+    as well as for all blocks adjacent to the area.
     """
     MAX_LIGHT_LEVEL = 15
     
@@ -43,24 +74,21 @@ class Light:
         Return a list of blocks whose light levels changed.
         """
         # clear all light in surrounding area
-        area = [a for a in self.get_update_area(x, y)]
-        for block in area:
-            self.set_light(block[0], block[1], 0)
-        #TODO: update light in area
-        return area
-    
-    def get_update_area(self, x, y):
-        """Yield blocks whose light could be changed by block at (x, y).
+        area = expand_n((x, y), self.MAX_LIGHT_LEVEL)
+        for (bx, by) in area:
+            if self.get_light(bx, by) != None:
+                self.set_light(bx, by, 0)
         
-        For now this is a simple rectangle.
-        """
-        for xx in xrange(x - self.MAX_LIGHT_LEVEL - 1,
-                        x + self.MAX_LIGHT_LEVEL):
-            for yy in xrange(y - self.MAX_LIGHT_LEVEL - 1,
-                            y + self.MAX_LIGHT_LEVEL):
-                if (xx in xrange(0, self.map_size[0]) and
-                            yy in xrange(0, self.map_size[1])):
-                    yield (xx, yy)
+        # update light in area
+        blocks = expand_n((x, y), self.MAX_LIGHT_LEVEL + 1)
+        for (bx, by) in blocks:
+            bid = self.map_blocks.get_block(bx, by)
+            if bid != None:
+                if Block(bid).name == "rock":
+                    self.set_light(bx, by, 15)
+                self.propagate_light(bx, by)
+        
+        return area
     
     def get_light(self, x, y):
         """Return light level at coordinates."""
