@@ -6,10 +6,10 @@ class Block:
     The first time it is imported, this module will load the surfaces.
     """
     l = pygame.image.load
-    #       block_id  name     solid  surf
-    info = {0:       ("air",   False, None),
-            1:       ("grass", True,  l("grass.png")),
-            2:       ("rock",  True,  l("rock.png")),
+    #       block_id  name     solid  surf             brightness opacity
+    info = {0:       ("air",   False, None,            0,          1),
+            1:       ("grass", True,  l("grass.png"),  0,          5),
+            2:       ("rock",  True,  l("rock.png"),   15,         1),
            }
     # derive name->id dict
     names = {}
@@ -33,6 +33,8 @@ class Block:
         self.name = bi[0]
         self.is_solid = bi[1]
         self.surf = bi[2]
+        self.brightness = bi[3]
+        self.opacity = bi[4]
 
 if __name__ == "__main__":
     print Block(0).name
