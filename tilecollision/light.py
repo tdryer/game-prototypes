@@ -54,18 +54,20 @@ class Light:
         for x in xrange(0, self.map_size[0]):
             for y in xrange(0, self.map_size[1]):
                 bid = self.map_blocks.get_block(x, y)
-                if Block(bid).name == "rock":
-                    self.set_light(x, y, 15)
+                if Block(bid).brightness > 0:
+                    self.set_light(x, y, Block(bid).brightness)
                     self.propagate_light(x, y)
                 
     def propagate_light(self, x, y):
         """Spread light from one block to its neighbors recursively."""
         level = self.get_light(x, y)
         adjacent = [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+        bid = self.map_blocks.get_block(x, y)
+        opacity = Block(bid).opacity
         for (x, y) in adjacent:
             adj_level = self.get_light(x, y)
-            if adj_level != None and adj_level < level - 1:
-                self.set_light(x, y, level - 1)
+            if adj_level != None and adj_level < level - opacity:
+                self.set_light(x, y, level - opacity)
                 self.propagate_light(x, y)
     
     def update_light(self, x, y):
@@ -84,8 +86,8 @@ class Light:
         for (bx, by) in blocks:
             bid = self.map_blocks.get_block(bx, by)
             if bid != None:
-                if Block(bid).name == "rock":
-                    self.set_light(bx, by, 15)
+                if Block(bid).brightness > 0:
+                    self.set_light(bx, by, Block(bid).brightness)
                 self.propagate_light(bx, by)
         
         return area
