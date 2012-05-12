@@ -9,7 +9,8 @@ class Block:
     #       block_id  name     solid  surf             brightness opacity
     info = {0:       ("air",   False, None,            0,          1),
             1:       ("grass", True,  l("grass.png"),  0,          5),
-            2:       ("rock",  True,  l("rock.png"),   15,         1),
+            2:       ("rock",  True,  l("rock.png"),   0,          5),
+            3:       ("lamp",  True,  l("lamp.png"),   15,         1),
            }
     # derive name->id dict
     names = {}
