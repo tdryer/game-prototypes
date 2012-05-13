@@ -437,6 +437,7 @@ class Game:
         
         pygame.init()
         pygame.font.init()
+        pygame.display.set_caption("tilecollision prototype")
         self.screen_size = (self.WIDTH, self.HEIGHT)
         self.screen = pygame.display.set_mode(self.screen_size)
         
