@@ -1,6 +1,6 @@
 import pygame
 from random import uniform
-from math import ceil, floor, sin, cos, atan2
+from math import ceil, floor, sin, cos, atan2, sqrt, pow
 
 import map_generation
 import particles
@@ -194,7 +194,7 @@ class Map:
         
         self._particle_systems = [] # (ParticleSystem, pos) tuples
         
-        self.cursor_pos = (0, 0) # pixel coords
+        self.cursor_pos = None # pixel coords or None
         
         self.light = Light(self)
         
@@ -362,11 +362,12 @@ class Map:
             ps.draw(surf, p_pos)
         
         # draw selected block
-        selected_block = self.px_to_grid(pos, self.cursor_pos)
-        selected_block = (int(selected_block[0]), int(selected_block[1]))
-        rect = (self.grid_to_px(pos, selected_block) + 
-                (self.TILE_SIZE, self.TILE_SIZE))
-        pygame.draw.rect(surf, (255, 0, 0), rect, 2)
+        if self.cursor_pos != None:
+            selected_block = self.px_to_grid(pos, self.cursor_pos)
+            selected_block = (int(selected_block[0]), int(selected_block[1]))
+            rect = (self.grid_to_px(pos, selected_block) +
+                    (self.TILE_SIZE, self.TILE_SIZE))
+            pygame.draw.rect(surf, (255, 0, 0), rect, 2)
         
     def grid_to_px(self, topleft, pos):
         """Return pixel coordinate from a grid coordinate.
@@ -396,7 +397,7 @@ class Map:
             if ps.is_expired():
                 self._particle_systems.remove(ps_pos)
 
-    def rect_colliding(self, rect):
+    def rect_colliding(self, rect, assume_solid=None):
         """Return true if the given rect will collide with the map.
         
         This works by finding all the map blocks inside the rect, and 
@@ -404,6 +405,8 @@ class Map:
         
         rect should be a (x, y, w, h) tuple since pygame Rects don't use 
         floats.
+        
+        If assume_solid is an (x, y) tuple, that block will be assumed solid.
         """
         r_x = rect[0]
         r_y = rect[1]
@@ -414,9 +417,10 @@ class Map:
         y_range = (int(r_y), int(ceil(r_y + r_h)))
         for x in xrange(x_range[0], x_range[1]):
             for y in xrange(y_range[0], y_range[1]):
-                if self.is_solid_block(x, y):
+                if self.is_solid_block(x, y) or (x, y) == assume_solid:
                     return True
         return False
+
 
 class Game:
     """Main class which handles input, drawing, and updating."""
@@ -428,6 +432,7 @@ class Game:
         self.MAP_SIZE = (100, 100)
         self.PLAYER_POS = (0.5, 0.5)
         self.PLAYER_SIZE = (1.5, 1.5)
+        self.PLAYER_REACH = 4
         self.HUD_HEIGHT = 50
         
         pygame.init()
@@ -446,6 +451,8 @@ class Game:
         self.hud = HUD(hud_rect)
         
         self.topleft = (0, 0) # reset to center on player
+        
+        self.mouse_pos = (0, 0)
         
     def do_events(self):
         """Handle events from pygame."""
@@ -470,33 +477,31 @@ class Game:
                 elif event.key == 97: # a
                     self.player.walk_left = False
             elif event.type == pygame.MOUSEMOTION:
-                self.map.cursor_pos = event.pos
+                # save mouse pos to compute map cursor each frame
+                self.mouse_pos = event.pos
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    # get coordinates and id of selected block
-                    (gx, gy) = self.map.px_to_grid(self.topleft, event.pos)
-                    (gx, gy) = (int(gx), int(gy))
-                    block_id = self.map.get_block(gx, gy)
-                    # put a block in air
-                    if block_id == Block(name="air").id:
-                        # add block
-                        new_block = self.hud.get_selected_block()
-                        self.map.set_block(gx, gy, new_block)
-                        # if player now collides with map
-                        if self.map.rect_colliding(self.player.get_rect()):
-                            # undo the change by replacing block with air
+                    # if mouse is in valid location to place/destory block
+                    if self.map.cursor_pos:
+                        (gx, gy) = self.map.px_to_grid(self.topleft,
+                                                       self.map.cursor_pos)
+                        (gx, gy) = (int(gx), int(gy))
+                        block_id = self.map.get_block(gx, gy)
+                        if Block(block_id).is_solid:
+                            # remove block
                             self.map.set_block(gx, gy, Block(name="air").id)
-                    # allow solid blocks to be destroyed
-                    elif Block(block_id).is_solid:
-                        # remove block
-                        self.map.set_block(gx, gy, Block(name="air").id)
-                        self.hud.add_block(block_id)
-                        surf = Block(block_id).surf
-                        ps_pos = (particles.ParticleSystem(surf),
-                                  (gx+0.5, gy+0.5))
-                        self.map._particle_systems.append(ps_pos)
-                        angle = atan2(gx - self.player.x, gy - self.player.y)
-                        self.player.punch((180/3.141) * angle)
+                            self.hud.add_block(block_id)
+                            surf = Block(block_id).surf
+                            ps_pos = (particles.ParticleSystem(surf),
+                                      (gx+0.5, gy+0.5))
+                            self.map._particle_systems.append(ps_pos)
+                            angle = atan2(gx - self.player.x, gy -
+                                          self.player.y)
+                            self.player.punch((180/3.141) * angle)
+                        else:
+                            # add block
+                            new_block = self.hud.get_selected_block()
+                            self.map.set_block(gx, gy, new_block)
                 elif event.button == 4: # wheel up
                     self.hud.rotate_selection(-1)
                 elif event.button == 5: # wheel down
@@ -506,6 +511,21 @@ class Game:
     def do_update(self, elapsed):
         """Update the game state."""
         self.map.update(elapsed)
+        
+        # update the cursor
+        # find grid distance from center of block under the mouse to
+        # player's center
+        (gx, gy) = self.map.px_to_grid(self.topleft, self.mouse_pos)
+        (gx, gy) = (int(gx), int(gy))
+        dist = sqrt(pow(gx + 0.5 - self.player.x - self.player.width/2, 2) +
+                    pow(gy + 0.5 - self.player.y - self.player.height/2, 2))
+        # only show cursor if close enough and block doesn't collide
+        if dist > self.PLAYER_REACH:
+            self.map.cursor_pos = None
+        elif self.map.rect_colliding(self.player.get_rect(), (gx, gy)):
+            self.map.cursor_pos = None
+        else:
+            self.map.cursor_pos = self.mouse_pos
     
     def do_draw(self):
         """Draw the game."""
