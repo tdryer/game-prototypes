@@ -41,6 +41,10 @@ class Light:
     
     The update is completed by propagating light for every block in the area,
     as well as for all blocks adjacent to the area.
+    
+    Sunlight works by keeping an array of the y coordinate the sun falls on for
+    each x coordinate in the map. When a block obscures the sun or reveals it,
+    extra blocks must be updated for the larger lighting change.
     """
     MAX_LIGHT_LEVEL = 15
     
@@ -49,14 +53,25 @@ class Light:
         self.map_blocks = map_blocks
         self.map_size = map_blocks.size
         self.map_light = [0] * (self.map_size[0] * self.map_size[1])
+        # y coordinate receiving light for each column of blocks
+        self.sunlight_y = [self.map_size[1] - 1] * self.map_size[0]
         
         # compute light levels for whole map
         for x in xrange(0, self.map_size[0]):
             for y in xrange(0, self.map_size[1]):
                 bid = self.map_blocks.get_block(x, y)
-                if Block(bid).brightness > 0:
+                if y < self.sunlight_y[x]:
+                    # this block is in the sun
+                    if Block(bid).is_solid:
+                        # this block will obscure the sun
+                        self.sunlight_y[x] = y
+                    self.set_light(x, y, self.MAX_LIGHT_LEVEL)
+                    self.propagate_light(x, y)
+                elif Block(bid).brightness > 0:
+                    # this block gives off light
                     self.set_light(x, y, Block(bid).brightness)
                     self.propagate_light(x, y)
+                
                 
     def propagate_light(self, x, y):
         """Spread light from one block to its neighbors recursively."""
@@ -75,18 +90,49 @@ class Light:
         
         Return a list of blocks whose light levels changed.
         """
+        area = None
+        bid = self.map_blocks.get_block(x, y)
+        if Block(bid).is_solid:
+            if y < self.sunlight_y[x]:
+                # new block has obscured the sun
+                self.sunlight_y[x] = y
+                # compute area to update now in shadow
+                by = y + 1
+                area = expand_n((x, y), self.MAX_LIGHT_LEVEL)
+                while (not Block(self.map_blocks.get_block(x, by)).is_solid 
+                        and y < self.map_size[1]):
+                    area = area.union(expand_n((x, by), self.MAX_LIGHT_LEVEL))
+                    by += 1
+        else:
+            if y == self.sunlight_y[x]:
+                # removed block has unobscured the sun
+                # find new sun y level and compute area to update now lit
+                by = y + 1
+                area = expand_n((x, y), self.MAX_LIGHT_LEVEL)
+                while (not Block(self.map_blocks.get_block(x, by)).is_solid 
+                        and y < self.map_size[1]):
+                    area = area.union(expand_n((x, by), self.MAX_LIGHT_LEVEL))
+                    by += 1
+                self.sunlight_y[x] = by
+        
+        if area == None:
+            area = expand_n((x, y), self.MAX_LIGHT_LEVEL)
+        
         # clear all light in surrounding area
-        area = expand_n((x, y), self.MAX_LIGHT_LEVEL)
         for (bx, by) in area:
             if self.get_light(bx, by) != None:
                 self.set_light(bx, by, 0)
         
         # update light in area
-        blocks = expand_n((x, y), self.MAX_LIGHT_LEVEL + 1)
+        blocks = expand(area)
         for (bx, by) in blocks:
             bid = self.map_blocks.get_block(bx, by)
             if bid != None:
-                if Block(bid).brightness > 0:
+                if by <= self.sunlight_y[bx]:
+                    # this block is in the sun
+                    self.set_light(bx, by, self.MAX_LIGHT_LEVEL)
+                elif Block(bid).brightness > 0:
+                    # this block gives off light
                     self.set_light(bx, by, Block(bid).brightness)
                 self.propagate_light(bx, by)
         
