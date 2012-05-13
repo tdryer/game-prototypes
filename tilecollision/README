@@ -11,7 +11,7 @@ Features:
     Run and jump player controls.
     Simple noise-based terrain generation.
     Simple particle effect when breaking blocks.
-    Lighting engine supporting brightness and opacity block attributes.
+    Lighting engine with brightness and opacity block attributes, and sunlight.
 
 Run "python game.py", use the A and D keys to walk, W to jump, left
 click to destory/place blocks, and mouse wheel to switch blocks in the HUD.
