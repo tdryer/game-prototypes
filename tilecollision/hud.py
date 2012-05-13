@@ -30,9 +30,12 @@ class HUD:
             pygame.draw.rect(surf, (0, 0, 0), cell_rect)
             curr_x += cell_size
             
-            # draw highlight for selected cell
+            # draw highlight for cell
             if self.selected_cell == i:
-                pygame.draw.rect(surf, (255, 0, 0), cell_rect, 2)
+                col = (255, 0, 0)
+            else:
+                col = (255, 255, 255)
+            pygame.draw.rect(surf, col, cell_rect, 2)
             
             # draw block in center of cell_rect
             block_surf = Block(block).surf
