@@ -498,9 +498,9 @@ class Game:
                         angle = atan2(gx - self.player.x, gy - self.player.y)
                         self.player.punch((180/3.141) * angle)
                 elif event.button == 4: # wheel up
-                    self.hud.rotate_selection(1)
-                elif event.button == 5: # wheel down
                     self.hud.rotate_selection(-1)
+                elif event.button == 5: # wheel down
+                    self.hud.rotate_selection(1)
                 
 
     def do_update(self, elapsed):
