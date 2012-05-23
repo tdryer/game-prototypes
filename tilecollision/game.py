@@ -1,5 +1,5 @@
 import pygame
-from random import uniform
+from random import uniform, randrange
 from math import ceil, floor, sin, cos, atan2, sqrt, pow
 
 import map_generation
@@ -185,6 +185,8 @@ class Map:
         """Create map of size*size tiles."""
         self.TILE_SIZE = 20 # pixels
         self.CHUNK_SIZE = 8 # blocks square
+        self.BLOCK_UPDATE_SIZE = (40, 40) # rect size around player in blocks
+        self.BLOCK_UPDATE_FREQ = 1000 # number of blocks to update per second
         
         self._blocks = [] # block_ids of the map in row-major order
         self.size = size # (width, height) of the map in blocks
@@ -376,14 +378,43 @@ class Map:
                 (float(pos[1]) / self.TILE_SIZE) + topleft[1])
 
     def update(self, millis):
-        """Update all entities and particle systems in the map."""
+        """Update entities, particle systems, and blocks in the map.
+        
+        Blocks are updated in a rectangle around the player. Random blocks in
+        this rectangle are chosen to be updated each call.
+        """
         for entity in self.entities:
             entity.update(millis, self)
+        
         for ps_pos in self._particle_systems:
             (ps, pos) = ps_pos
             ps.update(millis)
             if ps.is_expired():
                 self._particle_systems.remove(ps_pos)
+        
+        # TODO: hack to get player pos
+        update_center = (int(self.entities[0].x), int(self.entities[0].y))
+        # loop so updates occur at specified frequency
+        for i in xrange(int(ceil(millis /
+                                 float(self.BLOCK_UPDATE_FREQ * 1000)))):
+            x = randrange(update_center[0] - self.BLOCK_UPDATE_SIZE[0]/2, 
+                          update_center[0] + self.BLOCK_UPDATE_SIZE[0]/2 + 1)
+            y = randrange(update_center[1] - self.BLOCK_UPDATE_SIZE[1]/2, 
+                          update_center[1] + self.BLOCK_UPDATE_SIZE[1]/2 + 1)
+            # update block at (x, y)
+            bid = self.get_block(x, y)
+            if bid == Block(name="grass").id:
+                
+                # kill grass which is too dark
+                if self.light.get_light(x, y) < self.light.MAX_LIGHT_LEVEL:
+                    self.set_block(x, y, Block(name="dirt").id)
+                
+                # spread grass to adjacent blocks which are bright enough
+                for pos in [(x-1,y),(x+1,y),(x,y-1),(x,y+1),(x-1,y-1),
+                            (x+1,y+1),(x-1,y+1),(x+1,y-1)]:
+                    if (self.light.get_light(*pos) == self.light.MAX_LIGHT_LEVEL 
+                            and self.get_block(*pos) == Block(name="dirt").id):
+                        self.set_block(pos[0], pos[1], Block(name="grass").id)
 
     def rect_colliding(self, rect, assume_solid=None):
         """Return true if the given rect will collide with the map.
