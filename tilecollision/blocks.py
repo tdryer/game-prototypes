@@ -34,6 +34,7 @@ class Block:
             1:       ("grass", True,  l("grass.png"),  0,          5),
             2:       ("rock",  True,  l("rock.png"),   0,          5),
             3:       ("lamp",  True,  l("lamp.png"),   15,         1),
+            4:       ("dirt",  True,  l("dirt.png"),   0,          5),
            }
     # derive name->id dict
     names = {}

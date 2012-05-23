@@ -87,7 +87,7 @@ def generate_map(size):
             rock = threshold(rock, 0.3)
             
             if comp == 1:
-                b = Block(name="grass").id
+                b = Block(name="dirt").id
                 if rock == 0:
                     b = Block(name="rock").id
             else:

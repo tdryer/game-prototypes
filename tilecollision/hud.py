@@ -16,8 +16,8 @@ class HUD:
         self.rect = rect
         self.font = pygame.font.Font(None, self.rect[3]/2)
         
-        self.inv_items = [1, 2, 3] # order of items in bar
-        self.inv_count = {1: 0, 2: 0, 3: 0} # block id -> count
+        self.inv_items = [1, 2, 3, 4] # order of items in bar
+        self.inv_count = {1: 0, 2: 0, 3: 0, 4: 0} # block id -> count
         self.selected_cell = 0 # index of selected cell
         
     def draw(self, surf):
