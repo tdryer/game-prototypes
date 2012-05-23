@@ -63,8 +63,8 @@ def generate_map(size):
     cave_noise = perlin.SimplexNoise(period=64)
     rock_noise = perlin.SimplexNoise(period=64)
     
-    # y coordinate of highest dirt block in each column of blocks
-    top_dirt_y = [size[1] - 1] * size[0]
+    # y coordinate of highest block in each column of blocks
+    top_block_y = [size[1] - 1] * size[0]
     
     for y in xrange(size[1]):
         for x in xrange(size[0]):
@@ -96,10 +96,11 @@ def generate_map(size):
             else:
                 b = Block(name="air").id
             
-            # if this is the topmost dirt block, make it grass
-            if b == Block(name="dirt").id and y < top_dirt_y[x]:
-                top_dirt_y[x] = y
-                b = Block(name="grass").id
+            # if this is the topmost non-air block, and it's dirt, make it grass
+            if y < top_block_y[x] and b != Block(name="air").id:
+                top_block_y[x] = y
+                if b == Block(name="dirt").id:
+                    b = Block(name="grass").id
             
             blocks.append(b)
     return blocks
