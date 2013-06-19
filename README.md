@@ -6,13 +6,13 @@ for details, and check out the screenshots below.
 
 tilecollision (Python, pygame)
 -------------
-![tilecollision](/tdryer/game-prototypes/raw/HEAD/tilecollision/screenshot.png)
+![tilecollision](https://raw.github.com/tdryer/game-prototypes/master/tilecollision/screenshot.png)
 
 space (Python, pygame)
 -----
-![space](/tdryer/game-prototypes/raw/master/space/screenshot.png)
+![space](https://raw.github.com/tdryer/game-prototypes/master/space/screenshot.png)
 
 space-opengl (C++, OpenGL)
 ------------
-![space-opengl](/tdryer/game-prototypes/raw/master/space-opengl/screenshot.png)
+![space-opengl](https://raw.github.com/tdryer/game-prototypes/master/space/screenshot.png)
 
